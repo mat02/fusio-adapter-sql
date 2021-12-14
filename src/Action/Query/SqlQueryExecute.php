@@ -29,7 +29,7 @@ use Fusio\Engine\RequestInterface;
 use PSX\Http\Exception as StatusCode;
 
 /**
- * SqlQueryRow
+ * SqlQueryExecute
  *
  * @author  Mateusz Knapik <mateuszknapik@gmail.com>
  * @license http://www.gnu.org/licenses/agpl-3.0
@@ -50,9 +50,11 @@ class SqlQueryExecute extends SqlQueryAbstract
 
         [$query, $params] = $this->parseSql($sql, $request);
 
-        $result = $connection->prepare($query, $params);
+        $stmt = $connection->prepare($query, $params);
 
-        if ($result == false) {
+        $result = $stmt->execute();
+
+        if ($result != true) {
             throw new StatusCode\BadRequestException('Statement execution resulted in failure');
         }
 
