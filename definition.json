@@ -6,7 +6,8 @@
     "Fusio\\Adapter\\Sql\\Action\\SqlSelectRow",
     "Fusio\\Adapter\\Sql\\Action\\SqlUpdate",
     "Fusio\\Adapter\\Sql\\Action\\Query\\SqlQueryAll",
-    "Fusio\\Adapter\\Sql\\Action\\Query\\SqlQueryRow"
+    "Fusio\\Adapter\\Sql\\Action\\Query\\SqlQueryRow",
+    "Fusio\\Adapter\\Sql\\Action\\Query\\SqlQueryExecute"
   ],
   "connectionClass": [
     "Fusio\\Adapter\\Sql\\Connection\\Sql",
