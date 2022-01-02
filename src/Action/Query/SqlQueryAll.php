@@ -38,6 +38,8 @@ use Fusio\Engine\RequestInterface;
  */
 class SqlQueryAll extends SqlQueryAbstract
 {
+    const FILTERBY_REGEX = '/\{filterBy\}/';
+
     public function getName()
     {
         return 'SQL-Query-All';
@@ -49,8 +51,23 @@ class SqlQueryAll extends SqlQueryAbstract
 
         $sql   = $configuration->get('sql');
         $limit = (int) $configuration->get('limit');
+        $filteringColumns = $configuration->get('filteringColumns');
+
+        if ((bool)$configuration->get('builtinFiltering') == true) {
+            [$sql, $filterByParams] = $this->addFilter($request, $sql, $filteringColumns);
+        }
+
+        error_log(print_r($sql, TRUE), 0);
+        error_log(print_r($filterByParams, TRUE), 0);
 
         [$query, $params] = $this->parseSql($sql, $request);
+
+        if (!empty($filterByParams)) {
+            $params = array_merge($params, $filterByParams);
+        }
+
+        error_log(print_r($sql, TRUE), 0);
+        error_log(print_r($params, TRUE), 0);
 
         $startIndex = (int) $request->get('startIndex');
         $count      = (int) $request->get('count');
@@ -78,6 +95,102 @@ class SqlQueryAll extends SqlQueryAbstract
     {
         parent::configure($builder, $elementFactory);
 
+        $builder->add($elementFactory->newInput('builtinFiltering', 'Builtin filtering', 'checkbox', 'Uncheck if you don\'t want builtin filtering parameters or your SQL statement contains custom filtering'));
+        $builder->add($elementFactory->newTag('filteringColumns', 'Allowed filtering columns', 'Columns which are allowed to filter by (default is none)'));
         $builder->add($elementFactory->newInput('limit', 'Limit', 'number', 'The default limit of the result (default is 16)'));
+    }
+
+    private function addFilter(RequestInterface $request, string $query, $filteringColumns)
+    {
+        $filterBy    = strtolower($request->get('filterBy'));
+        $filterOp    = strtolower($request->get('filterOp'));
+        $filterValue = $request->get('filterValue');
+        $count       = 0;
+
+        $params = [];
+
+        if (!empty($filterBy) && !empty($filterOp) && !empty($filterValue) && in_array($filterBy, $filteringColumns)) {
+            switch ($filterOp) {
+                case 'contains':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' LIKE :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = '%' . $filterValue . '%';
+                    }
+                    break;
+
+                case 'equals':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' = :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue;
+                    }
+                    break;
+
+                case 'startsWith':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' LIKE :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+
+                case 'present':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' IS NOT NULL', -1, $query);
+                    break;
+                
+                case 'ne':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' != :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+
+                case 'gt':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' > :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+
+                case 'gte':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' >= :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+                
+                case 'lt':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' < :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+
+                case 'lte':
+                    $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' <= :filterValue', $query, -1, $count);
+                    if ($count > 0) {
+                        $params['filterValue'] = $filterValue . '%';
+                    }
+                    break;
+
+                case 'between':
+                    $b = $request->get('filterValueB');
+
+                    if (!empty($b)) {
+                        $query = preg_replace(self::FILTERBY_REGEX, $filterBy . ' BETWEEN :filterValueA AND :filterValueB', $query, -1, $count);
+                        if ($count > 0) {
+                            $params['filterValueA'] = $filterValue;
+                            $params['filterValueB'] = $b;
+                        }
+                    } else {
+                        $query = preg_replace(self::FILTERBY_REGEX, ' (1 = 1) ', $query);
+                    }
+                    break;
+            }
+        } else {
+            $query = preg_replace(self::FILTERBY_REGEX, ' (1 = 1) ', $query);
+        }
+        return [
+            $query,
+            $params,
+        ];
     }
 }

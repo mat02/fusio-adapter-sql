@@ -1,4 +1,4 @@
-<?php
+@#!@<?php
 /*
  * Fusio
  * A web-application to create dynamically RESTful APIs
@@ -123,6 +123,41 @@ class SqlSelectAll extends SqlActionAbstract
 
                 case 'present':
                     $qb->where($filterBy . ' IS NOT NULL');
+                    break;
+
+                case 'ne':
+                    $qb->where($filterBy . ' <> :filter');
+                    $qb->setParameter('filter', $filterValue);
+                    break;
+
+                case 'gt':
+                    $qb->where($filterBy . ' > :filter');
+                    $qb->setParameter('filter', $filterValue);
+                    break;
+
+                case 'gte':
+                    $qb->where($filterBy . ' >= :filter');
+                    $qb->setParameter('filter', $filterValue);
+                    break;
+                
+                case 'lt':
+                    $qb->where($filterBy . ' < :filter');
+                    $qb->setParameter('filter', $filterValue);
+                    break;
+
+                case 'lte':
+                    $qb->where($filterBy . ' <= :filter');
+                    $qb->setParameter('filter', $filterValue);
+                    break;
+
+                case 'between':
+                    $b = $request->get('filterValue2');
+
+                    if (!empty($a) && !empty($b)) {
+                        $qb->where($filterBy . ' BETWEEN :filterValueA AND :filterValueB');
+                        $qb->setParameter('filterValueA', $filterValue);
+                        $qb->setParameter('filterValueB', $b);
+                    }
                     break;
             }
         }
