@@ -57,17 +57,11 @@ class SqlQueryAll extends SqlQueryAbstract
             [$sql, $filterByParams] = $this->addFilter($request, $sql, $filteringColumns);
         }
 
-        error_log(print_r($sql, TRUE), 0);
-        error_log(print_r($filterByParams, TRUE), 0);
-
         [$query, $params] = $this->parseSql($sql, $request);
 
         if (!empty($filterByParams)) {
             $params = array_merge($params, $filterByParams);
         }
-
-        error_log(print_r($sql, TRUE), 0);
-        error_log(print_r($params, TRUE), 0);
 
         $startIndex = (int) $request->get('startIndex');
         $count      = (int) $request->get('count');
