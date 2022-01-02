@@ -1,4 +1,4 @@
-@#!@<?php
+<?php
 /*
  * Fusio
  * A web-application to create dynamically RESTful APIs
